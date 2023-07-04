@@ -1,22 +1,29 @@
-//Incomplete
-use reqwest::ClientBuilder;
-use std::error::Error;
-use tokio::time::Duration;
+// To use .lines() before, just like last time
+use std::io::BufRead;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    let timeout_duration = Duration::from_secs(1);
-    let client = ClientBuilder::new()
-        .danger_accept_invalid_certs(true)
-        .timeout(timeout_duration)
-        .build()?;
-    let mut i=0;
-    for i in 1..254{
-        let url=format!("http://123.63.2.{i}/");
-        //println!("{}",&url);
-        let response = client.get(&url).send().await?;
-        let status = response.status();
-        println!("Status code: {}", status);
+// We'll return _some_ kind of an error
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Open the file for input
+    let file = std::fs::File::open("urls.txt")?;
+    // Make a buffered version so we can read lines
+    let buffile = std::io::BufReader::new(file);
+
+    // CSV header
+    println!("URL,Status");
+
+    // Create a client so we can make requests
+    let client = reqwest::blocking::Client::new();
+
+    for line in buffile.lines() {
+        // Error handling on reading the lines in the file
+        let line = line?;
+        // Make a request and send it, getting a response
+        let resp = client.get(&line).send()?;
+        // Print the status code
+        println!("{},{}", line, resp.status().as_u16());
     }
     Ok(())
 }
+
+//Quick bash command to get urls only from httstatuscodes.txt
+//cat hostswithhttp.txt| cut -d ":" -f 2,3
